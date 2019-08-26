@@ -1,7 +1,13 @@
-var light_x = 2.3, light_y = 4.0, light_z = 3.5;
+var light_x = 2.3, light_y = 3.0, light_z = 3.5;
+var aspect = 0.0;
+
+var modelMatrix, perspMatrix, viewMatrix, mvpMatrix, normalMatrix;
+
 main();
+
 function main() {
     var canvas = document.getElementById('webgl');
+    aspect = canvas.width / canvas.height;
 
     var gl = getWebGLContext(canvas);
     if (!gl) {
@@ -20,11 +26,26 @@ function main() {
         return;
     }
 
-    prepareContext(gl, canvas, n);
+    modelMatrix = new Matrix4();
+    perspMatrix = new Matrix4();
+    viewMatrix = new Matrix4();
+    mvpMatrix = new Matrix4();
+    normalMatrix = new Matrix4();
 
-    gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+    gl.enable(gl.DEPTH_TEST);
 
-    gl.drawElements(gl.TRIANGLES, n, gl.UNSIGNED_BYTE, 0);
+    document.onkeydown = function (ev) {
+        keydown(ev, gl, u_LightPosition, n);
+    };
+
+    var u_LightColor = gl.getUniformLocation(gl.program, 'u_LightColor');
+    var u_LightPosition = gl.getUniformLocation(gl.program, 'u_LightPosition');
+    var u_AmbientLight = gl.getUniformLocation(gl.program, 'u_AmbientLight');
+
+    gl.uniform3f(u_LightColor, 1.0, 1.0, 1.0);
+    gl.uniform3f(u_AmbientLight, 0.25, 0.25, 0.25);
+
+    draw(gl, n, u_LightPosition);
 }
 
 function makeShaders(context, vShaderElement, fShaderElement) {
@@ -56,12 +77,12 @@ function initVertexBuffers(gl) {
     //  v2------v3
 
     var vertices = new Float32Array([
-        2.0, 2.0, 2.0, -2.0, 2.0, 2.0, -2.0, -2.0, 2.0, 2.0, -2.0, 2.0,      // v0-v1-v2-v3 front
-        2.0, 2.0, 2.0, 2.0, -2.0, 2.0, 2.0, -2.0, -2.0, 2.0, 2.0, -2.0,      // v0-v3-v4-v5 right
-        2.0, 2.0, 2.0, 2.0, 2.0, -2.0, -2.0, 2.0, -2.0, -2.0, 2.0, 2.0,      // v0-v5-v6-v1 up
-        -2.0, 2.0, 2.0, -2.0, 2.0, -2.0, -2.0, -2.0, -2.0, -2.0, -2.0, 2.0,   // v1-v6-v7-v2 left
-        -2.0, -2.0, -2.0, 2.0, -2.0, -2.0, 2.0, -2.0, 2.0, -2.0, -2.0, 2.0,   // v7-v4-v3-v2 down
-        2.0, -2.0, -2.0, -2.0, -2.0, -2.0, -2.0, 2.0, -2.0, 2.0, 2.0, -2.0   // v4-v7-v6-v5 back
+        0.5, 0.5, 0.5, -0.5, 0.5, 0.5, -0.5, -0.5, 0.5, 0.5, -0.5, 0.5,      // v0-v1-v2-v3 front
+        0.5, 0.5, 0.5, 0.5, -0.5, 0.5, 0.5, -0.5, -0.5, 0.5, 0.5, -0.5,      // v0-v3-v4-v5 right
+        0.5, 0.5, 0.5, 0.5, 0.5, -0.5, -0.5, 0.5, -0.5, -0.5, 0.5, 0.5,      // v0-v5-v6-v1 up
+        -0.5, 0.5, 0.5, -0.5, 0.5, -0.5, -0.5, -0.5, -0.5, -0.5, -0.5, 0.5,   // v1-v6-v7-v2 left
+        -0.5, -0.5, -0.5, 0.5, -0.5, -0.5, 0.5, -0.5, 0.5, -0.5, -0.5, 0.5,   // v7-v4-v3-v2 down
+        0.5, -0.5, -0.5, -0.5, -0.5, -0.5, -0.5, 0.5, -0.5, 0.5, 0.5, -0.5   // v4-v7-v6-v5 back
     ]);
 
     var normals = new Float32Array([
@@ -127,34 +148,24 @@ function initVertexBuffers(gl) {
     return indices.length;
 }
 
-function prepareContext(context, canvas, n) {
+function draw(context, n, u_LightPosition) {
     context.clearColor(0.0, 0.0, 0.0, 1.0);
     context.enable(context.DEPTH_TEST);
+
+    context.uniform3f(u_LightPosition, light_x, light_y, light_z);
 
     var u_mMatrix = context.getUniformLocation(context.program, 'u_mMatrix');
     var u_mvpMatrix = context.getUniformLocation(context.program, 'u_mvpMatrix');
     var u_normalMatrix = context.getUniformLocation(context.program, 'u_normalMatrix');
 
-    var u_LightColor = context.getUniformLocation(context.program, 'u_LightColor');
-    var u_LightPosition = context.getUniformLocation(context.program, 'u_LightPosition');
-    var u_AmbientLight = context.getUniformLocation(context.program, 'u_AmbientLight');
-
-    context.uniform3f(u_LightColor, 1.0, 1.0, 1.0);
-    context.uniform3f(u_LightPosition, 2.3, 4.0, 3.5);
-    context.uniform3f(u_AmbientLight, 0.25, 0.25, 0.25);
-
-    var modelMatrix = new Matrix4();
-    var mvpMatrix = new Matrix4();
-    var normalMatrix = new Matrix4();
-
     // model 
-    modelMatrix.setRotate(70, 0, 1, 0);
+    modelMatrix.setRotate(30, 0, 1, 0);
     context.uniformMatrix4fv(u_mMatrix, false, modelMatrix.elements);
 
     // model view
-    mvpMatrix.setPerspective(30, canvas.width / canvas.height, 1, 100);
-    mvpMatrix.lookAt(6, 8, 14, 0, 0, 0, 0, 1, 0);
-    mvpMatrix.multiply(modelMatrix);
+    perspMatrix.setPerspective(30, aspect, 1, 100);
+    viewMatrix.setLookAt(0, -2, 14, 0, 0, 0, 0, 1, 0);
+    mvpMatrix.set(perspMatrix).multiply(viewMatrix).multiply(modelMatrix);
     context.uniformMatrix4fv(u_mvpMatrix, false, mvpMatrix.elements);
 
     // spesial for normals - detect invisible plates
@@ -162,9 +173,23 @@ function prepareContext(context, canvas, n) {
     normalMatrix.transpose();
     context.uniformMatrix4fv(u_normalMatrix, false, normalMatrix.elements);
 
-    document.onkeydown = function (ev) {
-        keydown(ev, context, u_LightPosition, n);
-    }
+    context.clear(context.COLOR_BUFFER_BIT | context.DEPTH_BUFFER_BIT);
+    context.drawElements(context.TRIANGLES, n, context.UNSIGNED_BYTE, 0); // center cube
+
+    repeatFigure(-1.9, -1.9, 0.0, context, u_mMatrix, u_mvpMatrix, n);
+    repeatFigure(0.0, 3.8, 0.0, context, u_mMatrix, u_mvpMatrix, n);
+    repeatFigure(3.8, 0.0, 0.0, context, u_mMatrix, u_mvpMatrix, n);
+    repeatFigure(0.0, -3.8, 0.0, context, u_mMatrix, u_mvpMatrix, n);
+}
+
+function repeatFigure(dx, dy, dz, context, u_mMatrix, u_mvpMatrix, n) {
+    modelMatrix.translate(dx, dy, dz);
+    context.uniformMatrix4fv(u_mMatrix, false, modelMatrix.elements);
+
+    mvpMatrix.set(perspMatrix).multiply(viewMatrix).multiply(modelMatrix);
+    context.uniformMatrix4fv(u_mvpMatrix, false, mvpMatrix.elements);
+
+    context.drawElements(context.TRIANGLES, n, context.UNSIGNED_BYTE, 0);
 }
 
 function keydown(ev, context, u_LightPosition, n) {
@@ -186,5 +211,6 @@ function keydown(ev, context, u_LightPosition, n) {
     }
     context.uniform3f(u_LightPosition, light_x, light_y, light_z);
     context.clear(context.COLOR_BUFFER_BIT | context.DEPTH_BUFFER_BIT);
-    context.drawElements(context.TRIANGLES, n, context.UNSIGNED_BYTE, 0);
+    // context.drawElements(context.TRIANGLES, n, context.UNSIGNED_BYTE, 0);
+    draw(context, n, u_LightPosition);
 }
