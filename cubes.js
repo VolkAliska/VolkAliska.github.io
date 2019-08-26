@@ -7,7 +7,6 @@ main();
 
 function main() {
     var canvas = document.getElementById('webgl');
-    aspect = canvas.width / canvas.height;
 
     var gl = getWebGLContext(canvas);
     if (!gl) {
@@ -15,6 +14,7 @@ function main() {
         return;
     }
 
+    aspect = canvas.width / canvas.height;
     var vShaderElement = document.getElementById("VertexShader");
     var fShaderElement = document.getElementById("FragmentShader");
 
