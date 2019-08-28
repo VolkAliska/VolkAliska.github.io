@@ -1,8 +1,12 @@
-var light_x = 2.3, light_y = 3.0, light_z = 3.5;
+var light_x = 2.3,
+    light_y = 3.0,
+    light_z = 3.5;
 var aspect = 0.0;
-
+var u_AmbientLight, u_LightColor, u_LightPosition, u_color;
 var modelMatrix, perspMatrix, viewMatrix, mvpMatrix, normalMatrix;
 
+var blue = new Float32Array([0.3, 0.3, 0.8, 1.0]);
+var red = new Float32Array([0.8, 0.3, 0.3, 1.0]);
 main();
 
 function main() {
@@ -37,15 +41,51 @@ function main() {
     document.onkeydown = function (ev) {
         keydown(ev, gl, u_LightPosition, n);
     };
+    u_LightColor = gl.getUniformLocation(gl.program, 'u_LightColor');
+    u_LightPosition = gl.getUniformLocation(gl.program, 'u_LightPosition');
+    u_AmbientLight = gl.getUniformLocation(gl.program, 'u_AmbientLight');
+    u_color = gl.getUniformLocation(gl.program, 'u_color');
 
-    var u_LightColor = gl.getUniformLocation(gl.program, 'u_LightColor');
-    var u_LightPosition = gl.getUniformLocation(gl.program, 'u_LightPosition');
-    var u_AmbientLight = gl.getUniformLocation(gl.program, 'u_AmbientLight');
 
     gl.uniform3f(u_LightColor, 1.0, 1.0, 1.0);
     gl.uniform3f(u_AmbientLight, 0.25, 0.25, 0.25);
+    gl.uniform4f(u_color, blue[0], blue[1], blue[2], blue[3]);
+
+    document.onmousedown = function (ev) {
+        // is pressed
+        var x = ev.clientX,
+            y = ev.clientY;
+        var rect = ev.target.getBoundingClientRect();
+        if (rect.left <= x && x < rect.right && rect.top <= y && y < rect.bottom) {
+            // If pressed position is inside <canvas>, check if it is above object
+            var x_in_canvas = x - rect.left,
+                y_in_canvas = rect.bottom - y;
+            var picked = check(gl, n, x_in_canvas, y_in_canvas, u_LightPosition, u_color);
+            console.log(picked);
+            // if (picked) console.log('yes');
+        }
+    };
 
     draw(gl, n, u_LightPosition);
+}
+
+function check(gl, n, x, y, u_LightPosition, u_color) {
+    var picked = false;
+    draw(gl, n, u_LightPosition); // Draw cube with red
+    // Read pixel at the clicked position
+    var pixels = new Uint8Array(4); // Array for storing the pixel value
+    gl.readPixels(x, y, 1, 1, gl.RGBA, gl.UNSIGNED_BYTE, pixels);
+    console.log(pixels);
+    if (pixels[0] == 0 && pixels[1] == 0 && pixels[2] == 0) // The mouse in on cube if R(pixels[0]) is 255
+        picked = true;
+    else
+        gl.uniform4f(u_color, red[0], red[1], red[2], red[3]);
+
+    draw(gl, n, u_LightPosition); // Draw cube with red
+    // gl.uniform1i(u_Clicked, 0);  // Pass false to u_Clicked(rewrite the cube)
+    // draw(gl, n, currentAngle, viewProjMatrix, u_MvpMatrix); // Draw the cube
+
+    return picked;
 }
 
 function makeShaders(context, vShaderElement, fShaderElement) {
@@ -77,30 +117,30 @@ function initVertexBuffers(gl) {
     //  v2------v3
 
     var vertices = new Float32Array([
-        0.5, 0.5, 0.5, -0.5, 0.5, 0.5, -0.5, -0.5, 0.5, 0.5, -0.5, 0.5,      // v0-v1-v2-v3 front
-        0.5, 0.5, 0.5, 0.5, -0.5, 0.5, 0.5, -0.5, -0.5, 0.5, 0.5, -0.5,      // v0-v3-v4-v5 right
-        0.5, 0.5, 0.5, 0.5, 0.5, -0.5, -0.5, 0.5, -0.5, -0.5, 0.5, 0.5,      // v0-v5-v6-v1 up
-        -0.5, 0.5, 0.5, -0.5, 0.5, -0.5, -0.5, -0.5, -0.5, -0.5, -0.5, 0.5,   // v1-v6-v7-v2 left
-        -0.5, -0.5, -0.5, 0.5, -0.5, -0.5, 0.5, -0.5, 0.5, -0.5, -0.5, 0.5,   // v7-v4-v3-v2 down
-        0.5, -0.5, -0.5, -0.5, -0.5, -0.5, -0.5, 0.5, -0.5, 0.5, 0.5, -0.5   // v4-v7-v6-v5 back
+        0.5, 0.5, 0.5, -0.5, 0.5, 0.5, -0.5, -0.5, 0.5, 0.5, -0.5, 0.5, // v0-v1-v2-v3 front
+        0.5, 0.5, 0.5, 0.5, -0.5, 0.5, 0.5, -0.5, -0.5, 0.5, 0.5, -0.5, // v0-v3-v4-v5 right
+        0.5, 0.5, 0.5, 0.5, 0.5, -0.5, -0.5, 0.5, -0.5, -0.5, 0.5, 0.5, // v0-v5-v6-v1 up
+        -0.5, 0.5, 0.5, -0.5, 0.5, -0.5, -0.5, -0.5, -0.5, -0.5, -0.5, 0.5, // v1-v6-v7-v2 left
+        -0.5, -0.5, -0.5, 0.5, -0.5, -0.5, 0.5, -0.5, 0.5, -0.5, -0.5, 0.5, // v7-v4-v3-v2 down
+        0.5, -0.5, -0.5, -0.5, -0.5, -0.5, -0.5, 0.5, -0.5, 0.5, 0.5, -0.5 // v4-v7-v6-v5 back
     ]);
 
     var normals = new Float32Array([
-        0.0, 0.0, 1.0, 0.0, 0.0, 1.0, 0.0, 0.0, 1.0, 0.0, 0.0, 1.0,       // v0-v1-v2-v3 front
-        1.0, 0.0, 0.0, 1.0, 0.0, 0.0, 1.0, 0.0, 0.0, 1.0, 0.0, 0.0,       // v0-v3-v4-v5 right
-        0.0, 1.0, 0.0, 0.0, 1.0, 0.0, 0.0, 1.0, 0.0, 0.0, 1.0, 0.0,       // v0-v5-v6-v1 up
-        -1.0, 0.0, 0.0, -1.0, 0.0, 0.0, -1.0, 0.0, 0.0, -1.0, 0.0, 0.0,    // v1-v6-v7-v2 left
-        0.0, -1.0, 0.0, 0.0, -1.0, 0.0, 0.0, -1.0, 0.0, 0.0, -1.0, 0.0,   // v7-v4-v3-v2 down
-        0.0, 0.0, -1.0, 0.0, 0.0, -1.0, 0.0, 0.0, -1.0, 0.0, 0.0, -1.0    // v4-v7-v6-v5 back
+        0.0, 0.0, 1.0, 0.0, 0.0, 1.0, 0.0, 0.0, 1.0, 0.0, 0.0, 1.0, // v0-v1-v2-v3 front
+        1.0, 0.0, 0.0, 1.0, 0.0, 0.0, 1.0, 0.0, 0.0, 1.0, 0.0, 0.0, // v0-v3-v4-v5 right
+        0.0, 1.0, 0.0, 0.0, 1.0, 0.0, 0.0, 1.0, 0.0, 0.0, 1.0, 0.0, // v0-v5-v6-v1 up
+        -1.0, 0.0, 0.0, -1.0, 0.0, 0.0, -1.0, 0.0, 0.0, -1.0, 0.0, 0.0, // v1-v6-v7-v2 left
+        0.0, -1.0, 0.0, 0.0, -1.0, 0.0, 0.0, -1.0, 0.0, 0.0, -1.0, 0.0, // v7-v4-v3-v2 down
+        0.0, 0.0, -1.0, 0.0, 0.0, -1.0, 0.0, 0.0, -1.0, 0.0, 0.0, -1.0 // v4-v7-v6-v5 back
     ]);
 
     var indices = new Uint8Array([
-        0, 1, 2, 0, 2, 3,        // front
-        4, 5, 6, 4, 6, 7,        // right
-        8, 9, 10, 8, 10, 11,     // up
-        12, 13, 14, 12, 14, 15,   // left
-        16, 17, 18, 16, 18, 19,   // down
-        20, 21, 22, 20, 22, 23    // back
+        0, 1, 2, 0, 2, 3, // front
+        4, 5, 6, 4, 6, 7, // right
+        8, 9, 10, 8, 10, 11, // up
+        12, 13, 14, 12, 14, 15, // left
+        16, 17, 18, 16, 18, 19, // down
+        20, 21, 22, 20, 22, 23 // back
     ]);
 
     // verts

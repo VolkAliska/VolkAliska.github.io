@@ -19,7 +19,6 @@
         uniform mat4 u_mMatrix;
         uniform mat4 u_normalMatrix;
         varying vec3 v_position;
-        varying vec4 v_color;
         varying vec3 v_normal;
 
         void main()
@@ -36,21 +35,20 @@
         uniform vec3 u_LightColor;
         uniform vec3 u_LightPosition;
         uniform vec3 u_AmbientLight;
+        uniform vec4 u_color;
         varying vec3 v_position;
         varying vec3 v_normal;
-        varying vec4 v_color;
 
         void main()
         {
-            vec4 v_color = vec4(0.8, 0.3, 0.5, 1.0);
             vec3 normal = normalize(v_normal);
             vec3 lightDirection = normalize(u_LightPosition - v_position);
 
             // detect invisible plates
             float nDotL = max(dot(lightDirection, normal), 0.0);
-            vec3 ambient = u_AmbientLight * v_color.rgb;
-            vec3 diffuse = u_LightColor * v_color.rgb * nDotL;
-            gl_FragColor = vec4(diffuse + ambient, v_color.a);
+            vec3 ambient = u_AmbientLight * u_color.rgb;
+            vec3 diffuse = u_LightColor * u_color.rgb * nDotL;
+            gl_FragColor = vec4(diffuse + ambient, u_color.a);
         }
     </script>
 
