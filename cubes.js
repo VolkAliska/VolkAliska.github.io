@@ -5,6 +5,13 @@ var aspect = 0.0;
 var u_AmbientLight, u_LightColor, u_LightPosition, u_color;
 var modelMatrix, perspMatrix, viewMatrix, mvpMatrix, normalMatrix;
 
+var colors = [
+    new Float32Array([0.8, 0.3, 0.3, 1.0]), //red
+    new Float32Array([0.3, 0.3, 0.8, 1.0]), // blue
+    new Float32Array([0.8, 0.3, 0.8, 1.0]), // purple
+    new Float32Array([0.3, 0.8, 0.8, 1.0]), // yellow
+];
+
 var blue = new Float32Array([0.3, 0.3, 0.8, 1.0]);
 var red = new Float32Array([0.8, 0.3, 0.3, 1.0]);
 main();
@@ -49,42 +56,34 @@ function main() {
 
     gl.uniform3f(u_LightColor, 1.0, 1.0, 1.0);
     gl.uniform3f(u_AmbientLight, 0.25, 0.25, 0.25);
-    gl.uniform4f(u_color, blue[0], blue[1], blue[2], blue[3]);
+    gl.uniform4f(u_color, colors[0][0], colors[0][1], colors[0][2], colors[0][3]);
 
     document.onmousedown = function (ev) {
-        // is pressed
+        draw(gl, n, u_LightPosition);
         var x = ev.clientX,
             y = ev.clientY;
         var rect = ev.target.getBoundingClientRect();
         if (rect.left <= x && x < rect.right && rect.top <= y && y < rect.bottom) {
-            // If pressed position is inside <canvas>, check if it is above object
             var x_in_canvas = x - rect.left,
                 y_in_canvas = rect.bottom - y;
-            var picked = check(gl, n, x_in_canvas, y_in_canvas, u_LightPosition, u_color);
+            var picked = check(gl, x_in_canvas, y_in_canvas, u_color);
             console.log(picked);
-            // if (picked) console.log('yes');
+            draw(gl, n, u_LightPosition);
         }
     };
 
     draw(gl, n, u_LightPosition);
 }
 
-function check(gl, n, x, y, u_LightPosition, u_color) {
+function check(gl, x, y, u_color) {
     var picked = false;
-    draw(gl, n, u_LightPosition); // Draw cube with red
-    // Read pixel at the clicked position
-    var pixels = new Uint8Array(4); // Array for storing the pixel value
+    var pixels = new Uint8Array(4);
     gl.readPixels(x, y, 1, 1, gl.RGBA, gl.UNSIGNED_BYTE, pixels);
     console.log(pixels);
-    if (pixels[0] == 0 && pixels[1] == 0 && pixels[2] == 0) // The mouse in on cube if R(pixels[0]) is 255
+    if (pixels[0] != 0 && pixels[1] != 0 && pixels[2] != 0) {
         picked = true;
-    else
-        gl.uniform4f(u_color, red[0], red[1], red[2], red[3]);
-
-    draw(gl, n, u_LightPosition); // Draw cube with red
-    // gl.uniform1i(u_Clicked, 0);  // Pass false to u_Clicked(rewrite the cube)
-    // draw(gl, n, currentAngle, viewProjMatrix, u_MvpMatrix); // Draw the cube
-
+        gl.uniform4f(u_color, colors[0][0], colors[0][1], colors[0][2], colors[0][3]);
+    }
     return picked;
 }
 
