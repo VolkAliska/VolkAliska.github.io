@@ -5,6 +5,7 @@ var aspect = 0.0;
 var u_AmbientLight, u_LightColor, u_LightPosition, u_color;
 var modelMatrix, perspMatrix, viewMatrix, mvpMatrix, normalMatrix;
 
+var currentColor = 0;
 var colors = [
     new Float32Array([0.8, 0.3, 0.3, 1.0]), //red
     new Float32Array([0.3, 0.3, 0.8, 1.0]), // blue
@@ -82,7 +83,11 @@ function check(gl, x, y, u_color) {
     console.log(pixels);
     if (pixels[0] != 0 && pixels[1] != 0 && pixels[2] != 0) {
         picked = true;
-        gl.uniform4f(u_color, colors[0][0], colors[0][1], colors[0][2], colors[0][3]);
+        if (currentColor === colors.length - 1)
+            currentColor = 0;
+        else
+            currentColor++;
+        gl.uniform4f(u_color, colors[currentColor][0], colors[currentColor][1], colors[currentColor][2], colors[currentColor][3]);
     }
     return picked;
 }
